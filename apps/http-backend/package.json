@@ -13,6 +13,7 @@
     "jsonwebtoken": "^9.0.2"
   },
   "devDependencies": {
+    "@repo/backend-common": "workspace:*",
     "@repo/typescript-config": "workspace:*",
     "@types/express": "^5.0.0"
   },
