@@ -8,6 +8,13 @@ import { CreateUserSchema, SigninSchema, CreateRoomSchema } from "@repo/common/t
 const app = express();
 
 app.post("/signup", (req, res) => {
+    const data = CreateUserSchema.safeParse(req.body)
+    if (!data.success) {
+        res.json({
+            message: "Incorrect Input"
+        })
+        return
+    }
     // db call
     res.json({
         userId: "123"
@@ -15,7 +22,13 @@ app.post("/signup", (req, res) => {
 })
 
 app.post("/signin", (req, res) => {
-
+    const data = SigninSchema.safeParse(req.body)
+    if (!data.success) {
+        res.json({
+            message: "Incorrect Input"
+        })
+        return
+    }
 
     const userId = 1;
     const token = jwt.sign({
@@ -28,6 +41,13 @@ app.post("/signin", (req, res) => {
 })
 
 app.post("/room", middleware, (req, res) => {
+    const data = CreateRoomSchema.safeParse(req.body)
+    if (!data.success) {
+        res.json({
+            message: "Incorrect Input"
+        })
+        return
+    }
     // db call
 
     res.json({
