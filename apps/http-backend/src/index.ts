@@ -16,8 +16,9 @@ app.post("/signup", async (req: Request, res: Response) => {
         const parsedData = CreateUserSchema.safeParse(req.body)
 
         if (!parsedData.success) {
-            res.json({
-                message: "Incorrect Input"
+            res.status(400).json({
+                message: "Incorrect Input",
+                errors: parsedData.error.errors
             })
             return
         }
@@ -49,8 +50,9 @@ app.post("/signin", async (req: Request, res: Response) => {
     try {
         const parsedData = SigninSchema.safeParse(req.body)
         if (!parsedData.success) {
-            res.json({
-                message: "Incorrect Input"
+            res.status(400).json({
+                message: "Incorrect Input",
+                errors: parsedData.error.errors
             })
             return
         }
@@ -96,25 +98,38 @@ app.post("/signin", async (req: Request, res: Response) => {
 })
 
 app.post("/room", middleware, async (req, res) => {
-    const parsedData = CreateRoomSchema.safeParse(req.body)
-    if (!parsedData.success) {
-        res.json({
-            message: "Incorrect Input"
-        })
-        return;
-    }
-    // @ts-ignore: TODO: Fix this???
-    const userId = req.userId
-
-    await prismaClient.room.create({
-        data: {
-            slug: parsedData.data.name,
-            adminId: userId
+    try {
+        const parsedData = CreateRoomSchema.safeParse(req.body)
+        if (!parsedData.success) {
+            res.status(400).json({
+                message: "Incorrect Input",
+                errors: parsedData.error.errors
+            })
+            return;
         }
-    })
-    res.json({
-        roomId: userId
-    })
+        // @ts-ignore: TODO: Fix this???
+        const userId = req.userId
+
+        const room = await prismaClient.room.create({
+            data: {
+                slug: parsedData.data.name,
+                adminId: userId
+            }
+        })
+
+        res.status(201).json({
+            roomId: room.id
+        })
+        return
+
+    } catch (error) {
+        console.error("Failed to create room:", error);
+        res.status(500).json({
+            message: "Failed to create room"
+        });
+        return
+    }
+
 })
 
 app.listen(3001);
