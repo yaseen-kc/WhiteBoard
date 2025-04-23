@@ -1,6 +1,6 @@
-import express from "express";
+import express, { Request, Response } from "express";
 import jwt from "jsonwebtoken";
-import { hash } from 'bcrypt';
+import { compare, hash } from 'bcrypt';
 
 import { JWT_SECRET } from "@repo/backend-common/config";
 import { middleware } from "./middleware";
@@ -11,7 +11,7 @@ import { prismaClient } from "@repo/db/client"
 const app = express();
 app.use(express.json())
 
-app.post("/signup", async (req, res) => {
+app.post("/signup", async (req: Request, res: Response) => {
     try {
         const parsedData = CreateUserSchema.safeParse(req.body)
 
@@ -45,32 +45,63 @@ app.post("/signup", async (req, res) => {
     }
 })
 
-app.post("/signin", (req, res) => {
-    const data = SigninSchema.safeParse(req.body)
-    if (!data.success) {
+app.post("/signin", async (req: Request, res: Response) => {
+    try {
+        const parsedData = SigninSchema.safeParse(req.body)
+        if (!parsedData.success) {
+            res.json({
+                message: "Incorrect Input"
+            })
+            return
+        }
+
+        const user = await prismaClient.user.findUnique({
+            where: {
+                email: parsedData.data.email,
+            }
+        })
+
+        if (!user) {
+            res.status(401).json({
+                message: "Invalid Credentials"
+            })
+            return
+        }
+
+        const passwordValid = await compare(parsedData.data.password, user.password)
+
+        if (!passwordValid) {
+            res.status(401).json({
+                message: "Invalid Credentials"
+            })
+            return
+        }
+
+        const token = jwt.sign({
+            userId: user.id
+        }, JWT_SECRET);
+
         res.json({
-            message: "Incorrect Input"
+            token
+        })
+        return
+
+    } catch (error) {
+        res.status(500).json({
+            message: "Error during authentication"
         })
         return
     }
 
-    const userId = 1;
-    const token = jwt.sign({
-        userId
-    }, JWT_SECRET);
-
-    res.json({
-        token
-    })
 })
 
 app.post("/room", middleware, (req, res) => {
-    const data = CreateRoomSchema.safeParse(req.body)
-    if (!data.success) {
+    const parsedData = CreateRoomSchema.safeParse(req.body)
+    if (!parsedData.success) {
         res.json({
             message: "Incorrect Input"
         })
-        return
+
     }
     // db call
 
