@@ -95,18 +95,25 @@ app.post("/signin", async (req: Request, res: Response) => {
 
 })
 
-app.post("/room", middleware, (req, res) => {
+app.post("/room", middleware, async (req, res) => {
     const parsedData = CreateRoomSchema.safeParse(req.body)
     if (!parsedData.success) {
         res.json({
             message: "Incorrect Input"
         })
-
+        return;
     }
-    // db call
+    // @ts-ignore: TODO: Fix this???
+    const userId = req.userId
 
+    await prismaClient.room.create({
+        data: {
+            slug: parsedData.data.name,
+            adminId: userId
+        }
+    })
     res.json({
-        roomId: 123
+        roomId: userId
     })
 })
 
